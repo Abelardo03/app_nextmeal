@@ -1,46 +1,83 @@
 class Venta {
   final int id;
   final String nombreCliente;
-  final double total;
   final DateTime fecha;
+  final double total;
   final String metodoPago;
+  final int? idPedido;
 
   Venta({
     required this.id,
     required this.nombreCliente,
-    required this.total,
     required this.fecha,
+    required this.total,
     required this.metodoPago,
+    this.idPedido,
   });
 
   factory Venta.fromJson(Map<String, dynamic> json) {
-    // Extraer el ID del cliente si está disponible
-    final clienteData = json['cliente'];
-    final String nombreCliente = clienteData != null && clienteData['nombrecompleto'] != null
-        ? clienteData['nombrecompleto']
-        : json['nombreCliente'] ?? 'Cliente';
-    
-    // Extraer el total a pagar
-    final double total = json['total_pagar'] != null
-        ? double.tryParse(json['total_pagar'].toString()) ?? 0.0
-        : 0.0;
-    
-    // Extraer la fecha
-    DateTime fecha;
-    try {
-      fecha = json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now();
-    } catch (e) {
-      fecha = DateTime.now();
-    }
-    
+    // Adaptado para la estructura de tu backend
     return Venta(
       id: json['id'] ?? 0,
-      nombreCliente: nombreCliente,
-      total: total,
-      fecha: fecha,
-      metodoPago: json['metodo_pago'] ?? 'efectivo',
+      nombreCliente: _extraerNombreCliente(json),
+      fecha: _parsearFecha(json['createdAt'] ?? json['fecha']),
+      total: _parsearTotal(json['total_pagar'] ?? json['total']),
+      metodoPago: json['metodo_pago'] ?? json['metodoPago'] ?? 'efectivo',
+      idPedido: json['id_pedido'],
     );
+  }
+
+  static String _extraerNombreCliente(Map<String, dynamic> json) {
+    // Si viene del backend con relación de pedido y cliente
+    if (json['Pedido'] != null && json['Pedido']['Cliente'] != null) {
+      return json['Pedido']['Cliente']['nombrecompleto'] ?? 'Cliente desconocido';
+    }
+    
+    // Si viene directamente
+    return json['nombre_cliente'] ?? json['nombreCliente'] ?? 'Cliente desconocido';
+  }
+
+  static DateTime _parsearFecha(dynamic fecha) {
+    if (fecha == null) return DateTime.now();
+    
+    if (fecha is String) {
+      return DateTime.tryParse(fecha) ?? DateTime.now();
+    }
+    
+    return DateTime.now();
+  }
+
+  static double _parsearTotal(dynamic total) {
+    if (total == null) return 0.0;
+    
+    if (total is String) {
+      return double.tryParse(total) ?? 0.0;
+    }
+    
+    if (total is int) {
+      return total.toDouble();
+    }
+    
+    if (total is double) {
+      return total;
+    }
+    
+    return 0.0;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nombre_cliente': nombreCliente,
+      'fecha': fecha.toIso8601String(),
+      'total_pagar': total,
+      'metodo_pago': metodoPago,
+      if (idPedido != null) 'id_pedido': idPedido,
+    };
+  }
+
+  @override
+  String toString() {
+    return 'Venta{id: $id, cliente: $nombreCliente, total: $total, metodo: $metodoPago}';
   }
 }

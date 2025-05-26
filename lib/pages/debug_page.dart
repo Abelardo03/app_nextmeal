@@ -2,51 +2,40 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:app_nextmeal/pages/config.dart';
-
 class DebugPage extends StatefulWidget {
   const DebugPage({Key? key}) : super(key: key);
-
   @override
   _DebugPageState createState() => _DebugPageState();
 }
-
 class _DebugPageState extends State<DebugPage> {
   bool _isLoading = false;
   String _responseData = 'No hay datos';
   String _currentEndpoint = '/api/dashboard/resumen';
   final TextEditingController _endpointController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
     _endpointController.text = _currentEndpoint;
   }
-
   @override
   void dispose() {
     _endpointController.dispose();
     super.dispose();
   }
-
   Future<void> _fetchData() async {
     setState(() {
       _isLoading = true;
       _responseData = 'Cargando...';
     });
-
     try {
       final String baseUrl = 'http://${Config.apiurl}';
       final String endpoint = _endpointController.text.trim();
-      
       print('Solicitando datos de: $baseUrl$endpoint');
-      
       final response = await http.get(
         Uri.parse('$baseUrl$endpoint'),
         headers: {'Content-Type': 'application/json'},
       );
-
       print('Respuesta del servidor: ${response.statusCode}');
-      
       if (response.statusCode == 200) {
         // Intentar formatear el JSON para mejor legibilidad
         try {
@@ -76,7 +65,6 @@ class _DebugPageState extends State<DebugPage> {
       });
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -153,7 +141,6 @@ class _DebugPageState extends State<DebugPage> {
       ),
     );
   }
-
   Widget _buildQuickButton(String endpoint) {
     return TextButton(
       onPressed: () {

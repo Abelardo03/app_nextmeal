@@ -7,6 +7,14 @@ import 'package:app_nextmeal/services/dashboard_service.dart';
 import 'package:app_nextmeal/pages/config.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+// Colores específicos para métodos de pago
+class PaymentColors {
+  static const Color efectivo = Color(0xFF4CAF50); // Verde para efectivo
+  static const Color transferencia =
+      Color(0xFF2196F3); // Azul para transferencia
+  static const Color mainTextColor = Colors.white;
+}
+
 class EnhancedDashboardPage extends StatefulWidget {
   const EnhancedDashboardPage({super.key});
 
@@ -14,79 +22,29 @@ class EnhancedDashboardPage extends StatefulWidget {
   State<EnhancedDashboardPage> createState() => _EnhancedDashboardPageState();
 }
 
-class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
-    with TickerProviderStateMixin {
+class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
   final DashboardService _dashboardService = DashboardService();
-  
+
   // Data variables
   List<Map<String, dynamic>> _estadisticasSemanal = [];
   Map<String, dynamic> _resumen = {};
   Map<String, dynamic> _metodosPagoHoy = {};
   bool _isLoading = true;
-  
-  // Animation variables
-  late AnimationController _animationController;
-  late AnimationController _pulseController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _pulseAnimation;
-  
+
   // Chart variables
   int _touchedIndex = -1;
   int _touchedBarIndex = -1;
-  
+
   // Timer for real-time updates
   Timer? _realTimeTimer;
-  
-  // Colors usando Config
-  final List<Color> _chartColors = [
-    Color(Config.colors['secondary']!),  // Morado
-    Color(Config.colors['primary']!),    // Verde
-    Color(Config.colors['accent']!),     // Azul
-    Color(Config.colors['warning']!),    // Amarillo
-    Color(Config.colors['pink']!),       // Rosa
-    Color(Config.colors['error']!),      // Rojo
-    Color(Config.colors['violet']!),     // Violeta
-  ];
 
   @override
   void initState() {
     super.initState();
-    _initializeAnimations();
     initializeDateFormatting('es_ES', null).then((_) {
       _cargarDatos();
       _iniciarActualizacionTiempoReal();
     });
-  }
-
-  void _initializeAnimations() {
-    _animationController = AnimationController(
-      duration: Duration(milliseconds: Config.chartConfig['animationDuration']),
-      vsync: this,
-    );
-    
-    _pulseController = AnimationController(
-      duration: Duration(milliseconds: Config.chartConfig['pulseAnimationDuration']),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-
-    _pulseAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.2,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.elasticInOut,
-    ));
-
-    _animationController.forward();
-    _pulseController.repeat(reverse: true);
   }
 
   void _iniciarActualizacionTiempoReal() {
@@ -117,7 +75,6 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
     setState(() => _isLoading = true);
 
     try {
-      // Cargar datos con manejo de errores individual
       Map<String, dynamic> resumen = {};
       List<Map<String, dynamic>> estadisticas = [];
       Map<String, dynamic> metodosPago = {};
@@ -127,7 +84,6 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
         print('Resumen cargado: $resumen');
       } catch (e) {
         print('Error cargando resumen: $e');
-        // Datos de ejemplo si falla
         resumen = {
           'montoVentasHoy': 15000,
           'montoVentasSemana': 85000,
@@ -141,7 +97,6 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
         print('Estadísticas cargadas: $estadisticas');
       } catch (e) {
         print('Error cargando estadísticas: $e');
-        // Datos de ejemplo si falla
         estadisticas = [
           {'dia': 'Lunes', 'monto': 12000},
           {'dia': 'Martes', 'monto': 15000},
@@ -158,11 +113,9 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
         print('Métodos de pago cargados: $metodosPago');
       } catch (e) {
         print('Error cargando métodos de pago: $e');
-        // Datos de ejemplo si falla
         metodosPago = {
-          'Efectivo': 8000,
-          'Tarjeta': 12000,
-          'Transferencia': 5000,
+          'efectivo': {'monto': 355000},
+          'transferencia': {'monto': 96000},
         };
       }
 
@@ -173,7 +126,6 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
           _metodosPagoHoy = metodosPago;
           _isLoading = false;
         });
-        _animationController.forward();
       }
     } catch (e) {
       print('Error general al cargar datos: $e');
@@ -186,9 +138,11 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
 
   Future<void> _cargarDatosEnTiempoReal() async {
     try {
-      final Map<String, dynamic> resumen = await _dashboardService.obtenerResumen();
-      final Map<String, dynamic> metodosPago = await _dashboardService.obtenerMetodosPagoHoy();
-      
+      final Map<String, dynamic> resumen =
+          await _dashboardService.obtenerResumen();
+      final Map<String, dynamic> metodosPago =
+          await _dashboardService.obtenerMetodosPagoHoy();
+
       if (mounted) {
         setState(() {
           _resumen = resumen;
@@ -218,82 +172,70 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
   }
 
   Widget _buildEnhancedSummaryCard(
-    String title, 
-    String value, 
-    Color color, 
-    IconData icon,
-    {String? subtitle, bool isPulsing = false}
-  ) {
+      String title, String value, Color color, IconData icon,
+      {String? subtitle}) {
     return Expanded(
-      child: AnimatedBuilder(
-        animation: isPulsing ? _pulseAnimation : _fadeAnimation,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: isPulsing ? _pulseAnimation.value : 1.0,
-            child: Container(
-              height: Config.uiConfig['cardHeight'],
-              margin: EdgeInsets.symmetric(horizontal: Config.uiConfig['margin']),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    color.withOpacity(0.1),
-                    color.withOpacity(0.05),
-                  ],
+      child: Container(
+        height: Config.uiConfig['cardHeight'],
+        margin: EdgeInsets.symmetric(horizontal: Config.uiConfig['margin']),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              color.withOpacity(0.1),
+              color.withOpacity(0.05),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(Config.uiConfig['borderRadius']),
+          border: Border.all(color: color.withOpacity(0.3), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: EdgeInsets.all(Config.uiConfig['padding']),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: color, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(Config.uiConfig['borderRadius']),
-                border: Border.all(color: color.withOpacity(0.3), width: 1),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              padding: EdgeInsets.all(Config.uiConfig['padding']),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(icon, color: color, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    value,
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (subtitle != null)
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
-                        fontSize: 10,
-                      ),
-                    ),
-                ],
+              ],
+            ),
+            Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          );
-        },
+            if (subtitle != null)
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.6),
+                  fontSize: 10,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -312,12 +254,12 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
       );
     }
 
-    // Calcular el máximo valor de forma segura
     double maxValue = 100;
     try {
       maxValue = _estadisticasSemanal
-          .map((e) => _toDouble(e['monto']))
-          .reduce(math.max) * 1.2;
+              .map((e) => _toDouble(e['monto']))
+              .reduce(math.max) *
+          1.2;
     } catch (e) {
       print('Error calculando máximo: $e');
     }
@@ -409,15 +351,18 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
                     },
                   ),
                   touchCallback: (FlTouchEvent event, barTouchResponse) {
-                    setState(() {
-                      if (!event.isInterestedForInteractions ||
-                          barTouchResponse == null ||
-                          barTouchResponse.spot == null) {
-                        _touchedBarIndex = -1;
-                        return;
-                      }
-                      _touchedBarIndex = barTouchResponse.spot!.touchedBarGroupIndex;
-                    });
+                    if (mounted) {
+                      setState(() {
+                        if (!event.isInterestedForInteractions ||
+                            barTouchResponse == null ||
+                            barTouchResponse.spot == null) {
+                          _touchedBarIndex = -1;
+                          return;
+                        }
+                        _touchedBarIndex =
+                            barTouchResponse.spot!.touchedBarGroupIndex;
+                      });
+                    }
                   },
                 ),
                 titlesData: FlTitlesData(
@@ -475,17 +420,18 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
                   final data = entry.value;
                   final isTouched = index == _touchedBarIndex;
                   final monto = _toDouble(data['monto']);
-                  
+
                   return BarChartGroupData(
                     x: index,
                     barRods: [
                       BarChartRodData(
                         toY: monto,
-                        color: isTouched 
+                        color: isTouched
                             ? Color(Config.colors['primary']!)
                             : Color(Config.colors['primary']!).withOpacity(0.8),
                         width: Config.chartConfig['barWidth'],
-                        borderRadius: BorderRadius.circular(Config.chartConfig['borderRadius']),
+                        borderRadius: BorderRadius.circular(
+                            Config.chartConfig['borderRadius']),
                         backDrawRodData: BackgroundBarChartRodData(
                           show: true,
                           toY: maxValue,
@@ -514,11 +460,15 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
     );
   }
 
+  // DONA COMPLETAMENTE SIMPLIFICADA
   Widget _buildPaymentMethodsChart() {
+    print('Construyendo gráfico de métodos de pago...');
+    print('Datos recibidos: $_metodosPagoHoy');
+
     if (_metodosPagoHoy.isEmpty) {
       return Container(
-        height: Config.uiConfig['chartHeight'],
-        padding: EdgeInsets.all(Config.uiConfig['padding']),
+        height: 300,
+        padding: const EdgeInsets.all(16),
         child: const Center(
           child: Text(
             'No hay datos de métodos de pago',
@@ -528,21 +478,37 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
       );
     }
 
-    // Convertir y ordenar métodos de pago de forma segura
-    final List<MapEntry<String, double>> sortedMethods = _metodosPagoHoy.entries
-        .map((entry) => MapEntry(entry.key, _toDouble(entry.value)))
-        .toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    // Extraer datos de la estructura anidada
+    double efectivo = 0.0;
+    double transferencia = 0.0;
 
-    final total = sortedMethods.fold<double>(
-      0, 
-      (sum, entry) => sum + entry.value
-    );
+    if (_metodosPagoHoy['efectivo'] != null &&
+        _metodosPagoHoy['efectivo'] is Map) {
+      efectivo = _toDouble(_metodosPagoHoy['efectivo']['monto']);
+    } else {
+      efectivo = _toDouble(
+          _metodosPagoHoy['Efectivo'] ?? _metodosPagoHoy['efectivo'] ?? 0);
+    }
+
+    if (_metodosPagoHoy['transferencia'] != null &&
+        _metodosPagoHoy['transferencia'] is Map) {
+      transferencia = _toDouble(_metodosPagoHoy['transferencia']['monto']);
+    } else {
+      transferencia = _toDouble(_metodosPagoHoy['Transferencia'] ??
+          _metodosPagoHoy['transferencia'] ??
+          0);
+    }
+
+    final double total = efectivo + transferencia;
+
+    print('Efectivo extraído: $efectivo');
+    print('Transferencia extraída: $transferencia');
+    print('Total calculado: $total');
 
     if (total == 0) {
       return Container(
-        height: Config.uiConfig['chartHeight'],
-        padding: EdgeInsets.all(Config.uiConfig['padding']),
+        height: 300,
+        padding: const EdgeInsets.all(16),
         child: const Center(
           child: Text(
             'No hay ventas registradas hoy',
@@ -553,15 +519,16 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
     }
 
     return Container(
-      height: Config.uiConfig['chartHeight'],
-      padding: EdgeInsets.all(Config.uiConfig['padding']),
+      height: 300,
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header
           Row(
             children: [
               Icon(
-                Icons.pie_chart,
+                Icons.donut_large,
                 color: Color(Config.colors['secondary']!),
                 size: 20,
               ),
@@ -586,118 +553,161 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
             ],
           ),
           const SizedBox(height: 20),
+
+          // Chart y Legend
           Expanded(
             child: Row(
               children: [
                 // Pie Chart
                 Expanded(
                   flex: 2,
-                  child: PieChart(
-                    PieChartData(
-                      pieTouchData: PieTouchData(
-                        touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                          setState(() {
-                            if (!event.isInterestedForInteractions ||
-                                pieTouchResponse == null ||
-                                pieTouchResponse.touchedSection == null) {
-                              _touchedIndex = -1;
-                              return;
+                  child: SizedBox(
+                    height: 200,
+                    child: PieChart(
+                      PieChartData(
+                        pieTouchData: PieTouchData(
+                          touchCallback:
+                              (FlTouchEvent event, pieTouchResponse) {
+                            if (mounted) {
+                              setState(() {
+                                if (!event.isInterestedForInteractions ||
+                                    pieTouchResponse == null ||
+                                    pieTouchResponse.touchedSection == null) {
+                                  _touchedIndex = -1;
+                                  return;
+                                }
+                                _touchedIndex = pieTouchResponse
+                                    .touchedSection!.touchedSectionIndex;
+                              });
                             }
-                            _touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
-                          });
-                        },
-                      ),
-                      borderData: FlBorderData(show: false),
-                      sectionsSpace: Config.chartConfig['sectionSpace'],
-                      centerSpaceRadius: Config.chartConfig['centerSpaceRadius'],
-                      sections: sortedMethods.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final method = entry.value;
-                        final isTouched = index == _touchedIndex;
-                        final fontSize = isTouched ? 16.0 : 12.0;
-                        final radius = isTouched ? 80.0 : 70.0;
-                        final percentage = (method.value / total * 100);
-                        
-                        return PieChartSectionData(
-                          color: _chartColors[index % _chartColors.length],
-                          value: method.value,
-                          title: '${percentage.toStringAsFixed(1)}%',
-                          radius: radius,
-                          titleStyle: TextStyle(
-                            fontSize: fontSize,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withOpacity(0.5),
-                                offset: const Offset(1, 1),
-                                blurRadius: 2,
-                              ),
-                            ],
+                          },
+                        ),
+                        borderData: FlBorderData(show: false),
+                        sectionsSpace: 0,
+                        centerSpaceRadius: 40,
+                        sections: [
+                          // Efectivo
+                          PieChartSectionData(
+                            color: PaymentColors.efectivo,
+                            value: efectivo,
+                            title:
+                                '${(efectivo / total * 100).toStringAsFixed(1)}%',
+                            radius: _touchedIndex == 0 ? 60.0 : 50.0,
+                            titleStyle: TextStyle(
+                              fontSize: _touchedIndex == 0 ? 20.0 : 14.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              shadows: const [
+                                Shadow(color: Colors.black, blurRadius: 2)
+                              ],
+                            ),
                           ),
-                        );
-                      }).toList(),
+                          // Transferencia
+                          PieChartSectionData(
+                            color: PaymentColors.transferencia,
+                            value: transferencia,
+                            title:
+                                '${(transferencia / total * 100).toStringAsFixed(1)}%',
+                            radius: _touchedIndex == 1 ? 60.0 : 50.0,
+                            titleStyle: TextStyle(
+                              fontSize: _touchedIndex == 1 ? 20.0 : 14.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              shadows: const [
+                                Shadow(color: Colors.black, blurRadius: 2)
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
+
                 const SizedBox(width: 20),
+
                 // Legend
                 Expanded(
                   flex: 1,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: sortedMethods.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final method = entry.value;
-                      final color = _chartColors[index % _chartColors.length];
-                      final percentage = (method.value / total * 100);
-                      
-                      return Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 16,
-                              height: 16,
-                              decoration: BoxDecoration(
-                                color: color,
-                                borderRadius: BorderRadius.circular(4),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: color.withOpacity(0.3),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
+                    children: [
+                      // Efectivo
+                      Row(
+                        children: [
+                          Container(
+                            width: 16,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: PaymentColors.efectivo,
+                              borderRadius: BorderRadius.circular(4),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    method.key,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Efectivo',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
                                   ),
-                                  Text(
-                                    '${_formatCurrency(method.value)} (${percentage.toStringAsFixed(1)}%)',
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.7),
-                                      fontSize: 10,
-                                    ),
+                                ),
+                                Text(
+                                  '${_formatCurrency(efectivo)} (${(efectivo / total * 100).toStringAsFixed(1)}%)',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white.withOpacity(0.8),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Transferencia
+                      Row(
+                        children: [
+                          Container(
+                            width: 16,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: PaymentColors.transferencia,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Transferencia',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                Text(
+                                  '${_formatCurrency(transferencia)} (${(transferencia / total * 100).toStringAsFixed(1)}%)',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white.withOpacity(0.8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -730,7 +740,7 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
             const SizedBox(width: 8),
             const Text(
               Config.appTitle,
-              style:  TextStyle(
+              style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
@@ -738,17 +748,9 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
           ],
         ),
         actions: [
-          AnimatedBuilder(
-            animation: _pulseAnimation,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _pulseAnimation.value * 0.1 + 0.9,
-                child: IconButton(
-                  icon: const Icon(Icons.refresh, color: Colors.white),
-                  onPressed: _cargarDatos,
-                ),
-              );
-            },
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _cargarDatos,
           ),
         ],
       ),
@@ -756,69 +758,67 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
         onRefresh: _cargarDatos,
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : FadeTransition(
-                opacity: _fadeAnimation,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.all(Config.uiConfig['padding']),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Enhanced Summary Cards
-                      Row(
-                        children: [
-                          _buildEnhancedSummaryCard(
-                            'Ventas Hoy',
-                            ventasHoy,
-                            Color(Config.colors['primary']!),
-                            Icons.today,
-                            subtitle: '$cantidadHoy ventas',
-                            isPulsing: false,
-                          ),
-                          const SizedBox(width: 8),
-                          _buildEnhancedSummaryCard(
-                            'Ventas Semana',
-                            ventasSemana,
-                            Color(Config.colors['accent']!),
-                            Icons.calendar_view_week,
-                          ),
-                          const SizedBox(width: 8),
-                          _buildEnhancedSummaryCard(
-                            'Ventas Mes',
-                            ventasMes,
-                            Color(Config.colors['secondary']!),
-                            Icons.calendar_month,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Charts Section
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Color(Config.colors['surface']!),
-                          borderRadius: BorderRadius.circular(Config.uiConfig['borderRadius']),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.1),
-                          ),
+            : SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.all(Config.uiConfig['padding']),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Enhanced Summary Cards
+                    Row(
+                      children: [
+                        _buildEnhancedSummaryCard(
+                          'Ventas Hoy',
+                          ventasHoy,
+                          Color(Config.colors['primary']!),
+                          Icons.today,
+                          subtitle: '$cantidadHoy ventas',
                         ),
-                        child: _buildEnhancedBarChart(),
-                      ),
-                      const SizedBox(height: 24),
-
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Color(Config.colors['surface']!),
-                          borderRadius: BorderRadius.circular(Config.uiConfig['borderRadius']),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.1),
-                          ),
+                        const SizedBox(width: 8),
+                        _buildEnhancedSummaryCard(
+                          'Ventas Semana',
+                          ventasSemana,
+                          Color(Config.colors['accent']!),
+                          Icons.calendar_view_week,
                         ),
-                        child: _buildPaymentMethodsChart(),
+                        const SizedBox(width: 8),
+                        _buildEnhancedSummaryCard(
+                          'Ventas Mes',
+                          ventasMes,
+                          Color(Config.colors['secondary']!),
+                          Icons.calendar_month,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Charts Section
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Color(Config.colors['surface']!),
+                        borderRadius: BorderRadius.circular(
+                            Config.uiConfig['borderRadius']),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.1),
+                        ),
                       ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
+                      child: _buildEnhancedBarChart(),
+                    ),
+                    const SizedBox(height: 24),
+
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Color(Config.colors['surface']!),
+                        borderRadius: BorderRadius.circular(
+                            Config.uiConfig['borderRadius']),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.1),
+                        ),
+                      ),
+                      child: _buildPaymentMethodsChart(),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
               ),
       ),
@@ -827,8 +827,6 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage>
 
   @override
   void dispose() {
-    _animationController.dispose();
-    _pulseController.dispose();
     _realTimeTimer?.cancel();
     super.dispose();
   }
