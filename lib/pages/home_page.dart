@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'enhanced_dashboard_page.dart';
-
+import 'ventas_page.dart' as ventas;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -34,10 +34,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       curve: Curves.easeInOut,
     ));
     
-    // Inicializar páginas
+    // Inicializar páginas - CORREGIDO: usar la página real de ventas
     _pages = [
       const EnhancedDashboardPage(), // Dashboard mejorado como página principal
-      const VentasPage(),
+      const ventas.VentasPage(), // Página real de gestión de ventas
       const ConfiguracionPage(),
     ];
     
@@ -104,68 +104,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               activeIcon: Icon(Icons.shopping_cart),
               label: 'Ventas',
             ),
-           
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Página temporal de Ventas
-class VentasPage extends StatelessWidget {
-  const VentasPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Row(
-          children: [
-            const Icon(
-              Icons.shopping_cart,
-              color: Color(0xFF10B981),
-              size: 24,
-            ),
-            const SizedBox(width: 8),
-            const Text(
-              'Gestión de Ventas',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.construction,
-              size: 80,
-              color: Colors.orange,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Módulo de Ventas',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'En desarrollo...',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-              ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings_outlined),
+              activeIcon: Icon(Icons.settings),
+              label: 'Config',
             ),
           ],
         ),
