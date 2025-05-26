@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:app_nextmeal/pages/config.dart';
-
 class DashboardService {
   // Usar las URLs del Config
   Future<Map<String, dynamic>> obtenerResumen() async {
@@ -10,12 +9,10 @@ class DashboardService {
         Uri.parse(Config.getDashboardResumenUrl()),
         headers: Config.defaultHeaders,
       );
-
       if (Config.enableLogging) {
         print('Petición a: ${Config.getDashboardResumenUrl()}');
         print('Respuesta: ${response.statusCode}');
       }
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return Map<String, dynamic>.from(data['data'] ?? {});
@@ -29,19 +26,16 @@ class DashboardService {
       throw Exception('Error de conexión: $e');
     }
   }
-
   Future<List<Map<String, dynamic>>> obtenerEstadisticasSemanal() async {
     try {
       final response = await http.get(
         Uri.parse(Config.getDashboardEstadisticasSemanalesUrl()),
         headers: Config.defaultHeaders,
       );
-
       if (Config.enableLogging) {
         print('Petición a: ${Config.getDashboardEstadisticasSemanalesUrl()}');
         print('Respuesta: ${response.statusCode}');
       }
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final List<dynamic> rawData = data['data'] ?? [];
@@ -56,19 +50,16 @@ class DashboardService {
       throw Exception('Error de conexión: $e');
     }
   }
-
   Future<Map<String, dynamic>> obtenerMetodosPagoHoy() async {
     try {
       final response = await http.get(
         Uri.parse(Config.getDashboardMetodosPagoHoyUrl()),
         headers: Config.defaultHeaders,
       );
-
       if (Config.enableLogging) {
         print('Petición a: ${Config.getDashboardMetodosPagoHoyUrl()}');
         print('Respuesta: ${response.statusCode}');
       }
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return Map<String, dynamic>.from(data['data'] ?? {});
@@ -82,19 +73,16 @@ class DashboardService {
       throw Exception('Error de conexión: $e');
     }
   }
-
   Future<List<Map<String, dynamic>>> obtenerVentasEnTiempoReal() async {
     try {
       final response = await http.get(
         Uri.parse(Config.getDashboardVentasTiempoRealUrl()),
         headers: Config.defaultHeaders,
       );
-
       if (Config.enableLogging) {
         print('Petición a: ${Config.getDashboardVentasTiempoRealUrl()}');
         print('Respuesta: ${response.statusCode}');
       }
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final List<dynamic> rawData = data['data'] ?? [];
@@ -109,7 +97,6 @@ class DashboardService {
       throw Exception('Error de conexión: $e');
     }
   }
-
   // Método para obtener estadísticas usando la API original
   Future<Map<String, dynamic>> obtenerEstadisticasOriginal() async {
     try {
@@ -117,7 +104,6 @@ class DashboardService {
         Uri.parse(Config.getEstadisticasUrl()),
         headers: Config.defaultHeaders,
       );
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return Map<String, dynamic>.from(data);

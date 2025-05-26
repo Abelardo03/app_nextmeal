@@ -6,6 +6,7 @@ import 'pages/login_page.dart';
 import 'pages/home_page.dart';
 import 'pages/enhanced_dashboard_page.dart';
 import 'pages/debug_page.dart';
+import 'pages/ventas_page.dart' as ventas;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +44,7 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomePage(),
         '/enhanced-dashboard': (context) => const EnhancedDashboardPage(),
         '/debug': (context) => const DebugPage(),
+        '/ventas': (context) => const ventas.VentasPage(),
       },
       debugShowCheckedModeBanner: false,
     );

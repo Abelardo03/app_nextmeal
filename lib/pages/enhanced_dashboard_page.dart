@@ -9,8 +9,9 @@ import 'package:intl/date_symbol_data_local.dart';
 
 // Colores específicos para métodos de pago
 class PaymentColors {
-  static const Color efectivo = Color(0xFF4CAF50);      // Verde para efectivo
-  static const Color transferencia = Color(0xFF2196F3); // Azul para transferencia
+  static const Color efectivo = Color(0xFF4CAF50); // Verde para efectivo
+  static const Color transferencia =
+      Color(0xFF2196F3); // Azul para transferencia
   static const Color mainTextColor = Colors.white;
 }
 
@@ -23,17 +24,17 @@ class EnhancedDashboardPage extends StatefulWidget {
 
 class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
   final DashboardService _dashboardService = DashboardService();
-  
+
   // Data variables
   List<Map<String, dynamic>> _estadisticasSemanal = [];
   Map<String, dynamic> _resumen = {};
   Map<String, dynamic> _metodosPagoHoy = {};
   bool _isLoading = true;
-  
+
   // Chart variables
   int _touchedIndex = -1;
   int _touchedBarIndex = -1;
-  
+
   // Timer for real-time updates
   Timer? _realTimeTimer;
 
@@ -137,9 +138,11 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
 
   Future<void> _cargarDatosEnTiempoReal() async {
     try {
-      final Map<String, dynamic> resumen = await _dashboardService.obtenerResumen();
-      final Map<String, dynamic> metodosPago = await _dashboardService.obtenerMetodosPagoHoy();
-      
+      final Map<String, dynamic> resumen =
+          await _dashboardService.obtenerResumen();
+      final Map<String, dynamic> metodosPago =
+          await _dashboardService.obtenerMetodosPagoHoy();
+
       if (mounted) {
         setState(() {
           _resumen = resumen;
@@ -169,12 +172,8 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
   }
 
   Widget _buildEnhancedSummaryCard(
-    String title, 
-    String value, 
-    Color color, 
-    IconData icon,
-    {String? subtitle}
-  ) {
+      String title, String value, Color color, IconData icon,
+      {String? subtitle}) {
     return Expanded(
       child: Container(
         height: Config.uiConfig['cardHeight'],
@@ -258,8 +257,9 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
     double maxValue = 100;
     try {
       maxValue = _estadisticasSemanal
-          .map((e) => _toDouble(e['monto']))
-          .reduce(math.max) * 1.2;
+              .map((e) => _toDouble(e['monto']))
+              .reduce(math.max) *
+          1.2;
     } catch (e) {
       print('Error calculando máximo: $e');
     }
@@ -359,7 +359,8 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
                           _touchedBarIndex = -1;
                           return;
                         }
-                        _touchedBarIndex = barTouchResponse.spot!.touchedBarGroupIndex;
+                        _touchedBarIndex =
+                            barTouchResponse.spot!.touchedBarGroupIndex;
                       });
                     }
                   },
@@ -419,17 +420,18 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
                   final data = entry.value;
                   final isTouched = index == _touchedBarIndex;
                   final monto = _toDouble(data['monto']);
-                  
+
                   return BarChartGroupData(
                     x: index,
                     barRods: [
                       BarChartRodData(
                         toY: monto,
-                        color: isTouched 
+                        color: isTouched
                             ? Color(Config.colors['primary']!)
                             : Color(Config.colors['primary']!).withOpacity(0.8),
                         width: Config.chartConfig['barWidth'],
-                        borderRadius: BorderRadius.circular(Config.chartConfig['borderRadius']),
+                        borderRadius: BorderRadius.circular(
+                            Config.chartConfig['borderRadius']),
                         backDrawRodData: BackgroundBarChartRodData(
                           show: true,
                           toY: maxValue,
@@ -480,16 +482,21 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
     double efectivo = 0.0;
     double transferencia = 0.0;
 
-    if (_metodosPagoHoy['efectivo'] != null && _metodosPagoHoy['efectivo'] is Map) {
+    if (_metodosPagoHoy['efectivo'] != null &&
+        _metodosPagoHoy['efectivo'] is Map) {
       efectivo = _toDouble(_metodosPagoHoy['efectivo']['monto']);
     } else {
-      efectivo = _toDouble(_metodosPagoHoy['Efectivo'] ?? _metodosPagoHoy['efectivo'] ?? 0);
+      efectivo = _toDouble(
+          _metodosPagoHoy['Efectivo'] ?? _metodosPagoHoy['efectivo'] ?? 0);
     }
 
-    if (_metodosPagoHoy['transferencia'] != null && _metodosPagoHoy['transferencia'] is Map) {
+    if (_metodosPagoHoy['transferencia'] != null &&
+        _metodosPagoHoy['transferencia'] is Map) {
       transferencia = _toDouble(_metodosPagoHoy['transferencia']['monto']);
     } else {
-      transferencia = _toDouble(_metodosPagoHoy['Transferencia'] ?? _metodosPagoHoy['transferencia'] ?? 0);
+      transferencia = _toDouble(_metodosPagoHoy['Transferencia'] ??
+          _metodosPagoHoy['transferencia'] ??
+          0);
     }
 
     final double total = efectivo + transferencia;
@@ -546,7 +553,7 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
             ],
           ),
           const SizedBox(height: 20),
-          
+
           // Chart y Legend
           Expanded(
             child: Row(
@@ -559,7 +566,8 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
                     child: PieChart(
                       PieChartData(
                         pieTouchData: PieTouchData(
-                          touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                          touchCallback:
+                              (FlTouchEvent event, pieTouchResponse) {
                             if (mounted) {
                               setState(() {
                                 if (!event.isInterestedForInteractions ||
@@ -582,26 +590,32 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
                           PieChartSectionData(
                             color: PaymentColors.efectivo,
                             value: efectivo,
-                            title: '${(efectivo / total * 100).toStringAsFixed(1)}%',
+                            title:
+                                '${(efectivo / total * 100).toStringAsFixed(1)}%',
                             radius: _touchedIndex == 0 ? 60.0 : 50.0,
                             titleStyle: TextStyle(
                               fontSize: _touchedIndex == 0 ? 20.0 : 14.0,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
-                              shadows: const [Shadow(color: Colors.black, blurRadius: 2)],
+                              shadows: const [
+                                Shadow(color: Colors.black, blurRadius: 2)
+                              ],
                             ),
                           ),
                           // Transferencia
                           PieChartSectionData(
                             color: PaymentColors.transferencia,
                             value: transferencia,
-                            title: '${(transferencia / total * 100).toStringAsFixed(1)}%',
+                            title:
+                                '${(transferencia / total * 100).toStringAsFixed(1)}%',
                             radius: _touchedIndex == 1 ? 60.0 : 50.0,
                             titleStyle: TextStyle(
                               fontSize: _touchedIndex == 1 ? 20.0 : 14.0,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
-                              shadows: const [Shadow(color: Colors.black, blurRadius: 2)],
+                              shadows: const [
+                                Shadow(color: Colors.black, blurRadius: 2)
+                              ],
                             ),
                           ),
                         ],
@@ -609,9 +623,9 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 20),
-                
+
                 // Legend
                 Expanded(
                   flex: 1,
@@ -654,9 +668,9 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
                           ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // Transferencia
                       Row(
                         children: [
@@ -726,7 +740,7 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
             const SizedBox(width: 8),
             const Text(
               Config.appTitle,
-              style:  TextStyle(
+              style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
@@ -782,7 +796,8 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
                     Container(
                       decoration: BoxDecoration(
                         color: Color(Config.colors['surface']!),
-                        borderRadius: BorderRadius.circular(Config.uiConfig['borderRadius']),
+                        borderRadius: BorderRadius.circular(
+                            Config.uiConfig['borderRadius']),
                         border: Border.all(
                           color: Colors.white.withOpacity(0.1),
                         ),
@@ -794,7 +809,8 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
                     Container(
                       decoration: BoxDecoration(
                         color: Color(Config.colors['surface']!),
-                        borderRadius: BorderRadius.circular(Config.uiConfig['borderRadius']),
+                        borderRadius: BorderRadius.circular(
+                            Config.uiConfig['borderRadius']),
                         border: Border.all(
                           color: Colors.white.withOpacity(0.1),
                         ),
