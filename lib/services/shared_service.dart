@@ -20,12 +20,11 @@ class SharedService {
     if(isKeyExist) {
       var cacheData = await APICacheManager().getCacheData("login_details");
       
-      // Corregido: Usar LoginResponseModel.fromJson correctamente
       return LoginResponseModel.fromJson(
         jsonDecode(cacheData.syncData)
       );
     }
-    return null; // Agregado return null para cuando no hay datos en caché
+    return null;
   }
 
   static Future<void> setLoginDetails(LoginResponseModel model) async {
@@ -33,12 +32,17 @@ class SharedService {
       key: "login_details", 
       syncData: jsonEncode(model.toJson()),
     ); 
-    // Corregido: Usar cacheModel en lugar de model
     await APICacheManager().addCacheData(cacheModel);
   }
 
-  static Future<void> logout(BuildContext context) async {
+  // Clear login data only
+  static Future<void> clearLoginData() async {
     await APICacheManager().deleteCache("login_details");
+  }
+
+  // Full logout with navigation (requires context)
+  static Future<void> logout(BuildContext context) async {
+    await clearLoginData();
 
     Navigator.pushNamedAndRemoveUntil(
       context,

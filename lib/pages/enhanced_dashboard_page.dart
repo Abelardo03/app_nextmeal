@@ -254,14 +254,29 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
       );
     }
 
-    double maxValue = 100;
+    double maxValue = 100; // Valor mínimo por defecto
     try {
-      maxValue = _estadisticasSemanal
-              .map((e) => _toDouble(e['monto']))
-              .reduce(math.max) *
-          1.2;
+      final montos = _estadisticasSemanal
+          .map((e) => _toDouble(e['monto']))
+          .where((monto) => monto > 0) // Filtrar valores positivos
+          .toList();
+
+      if (montos.isNotEmpty) {
+        maxValue = montos.reduce(math.max) * 1.2;
+        // Asegurar que maxValue sea al menos 100 para evitar problemas
+        if (maxValue < 100) maxValue = 100;
+      }
     } catch (e) {
       print('Error calculando máximo: $e');
+      maxValue = 100; // Valor seguro por defecto
+    }
+
+    // Calcular intervalo horizontal de forma segura
+    double horizontalInterval = maxValue / 4;
+    if (horizontalInterval <= 0 ||
+        horizontalInterval.isNaN ||
+        horizontalInterval.isInfinite) {
+      horizontalInterval = 25; // Valor por defecto seguro
     }
 
     return Container(
@@ -401,6 +416,8 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 60,
+                      interval:
+                          horizontalInterval, // Usar el intervalo calculado de forma segura
                       getTitlesWidget: (double value, TitleMeta meta) {
                         return Text(
                           _formatCurrency(value),
@@ -425,7 +442,9 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
                     x: index,
                     barRods: [
                       BarChartRodData(
-                        toY: monto,
+                        toY: monto > 0
+                            ? monto
+                            : 1, // Evitar valores 0 o negativos
                         color: isTouched
                             ? Color(Config.colors['primary']!)
                             : Color(Config.colors['primary']!).withOpacity(0.8),
@@ -444,7 +463,8 @@ class _EnhancedDashboardPageState extends State<EnhancedDashboardPage> {
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
-                  horizontalInterval: maxValue / 4,
+                  horizontalInterval:
+                      horizontalInterval, // Usar el intervalo seguro
                   getDrawingHorizontalLine: (value) {
                     return FlLine(
                       color: Colors.white.withOpacity(0.1),
