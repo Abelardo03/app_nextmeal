@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'enhanced_dashboard_page.dart';
 import 'ventas_page.dart' as ventas;
+import 'package:app_nextmeal/services/shared_service.dart';
+import 'package:app_nextmeal/models/login_response_model.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -34,10 +36,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       curve: Curves.easeInOut,
     ));
     
-    // Inicializar páginas - CORREGIDO: usar la página real de ventas
+    // Inicializar páginas
     _pages = [
-      const EnhancedDashboardPage(), // Dashboard mejorado como página principal
-      const ventas.VentasPage(), // Página real de gestión de ventas
+      const EnhancedDashboardPage(),
+      const ventas.VentasPage(),
       const ConfiguracionPage(),
     ];
     
@@ -116,9 +118,68 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 }
 
-// Página temporal de Configuración
-class ConfiguracionPage extends StatelessWidget {
+// Página de Configuración CORREGIDA CON DEBUG
+class ConfiguracionPage extends StatefulWidget {
   const ConfiguracionPage({super.key});
+
+  @override
+  State<ConfiguracionPage> createState() => _ConfiguracionPageState();
+}
+
+class _ConfiguracionPageState extends State<ConfiguracionPage> {
+  LoginResponseModel? userDetails;
+  bool isLoading = true;
+  String? debugInfo; // Para mostrar información de debug
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserDetails();
+  }
+
+  // MÉTODO CORREGIDO CON DEBUG: Cargar detalles del usuario
+  Future<void> _loadUserDetails() async {
+    try {
+      print('🔍 Iniciando carga de detalles del usuario...');
+      
+      // Verificar si hay datos de login
+      bool isLoggedIn = await SharedService.isLoggedIn();
+      print('📊 ¿Usuario logueado?: $isLoggedIn');
+      
+      if (!isLoggedIn) {
+        setState(() {
+          debugInfo = 'No hay sesión activa';
+          isLoading = false;
+        });
+        return;
+      }
+
+      final details = await SharedService.loginDetails();
+      print('📋 Detalles obtenidos: $details');
+      
+      if (details != null) {
+        print('👤 Nombre: ${details.data?.nombre ?? 'N/A'}');
+        print('📧 Email: ${details.data?.email ?? 'N/A'}');
+        print('🔑 Token: ${details.token?.substring(0, 20) ?? 'N/A'}...');
+      }
+      
+      if (mounted) {
+        setState(() {
+          userDetails = details;
+          debugInfo = details != null ? 'Datos cargados correctamente' : 'No se encontraron datos';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('❌ Error al cargar detalles del usuario: $e');
+      if (mounted) {
+        setState(() {
+          debugInfo = 'Error: $e';
+          isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -144,115 +205,275 @@ class ConfiguracionPage extends StatelessWidget {
             ),
           ],
         ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildConfigCard(
-              'Dashboard Original',
-              'Ver el dashboard básico',
-              Icons.dashboard_outlined,
-              () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const EnhancedDashboardPage(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            _buildConfigCard(
-              'Debug API',
-              'Probar endpoints del servidor',
-              Icons.bug_report_outlined,
-              () {
-                Navigator.pushNamed(context, '/debug');
-              },
-            ),
-            const SizedBox(height: 16),
-            _buildConfigCard(
-              'Acerca de',
-              'Información de la aplicación',
-              Icons.info_outlined,
-              () {
-                _showAboutDialog(context);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildConfigCard(String title, String subtitle, IconData icon, VoidCallback onTap) {
-    return Card(
-      color: const Color(0xFF161B22),
-      child: ListTile(
-        leading: Icon(
-          icon,
-          color: const Color(0xFF10B981),
-          size: 28,
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: const TextStyle(
-            color: Colors.white70,
-          ),
-        ),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          color: Colors.white54,
-          size: 16,
-        ),
-        onTap: onTap,
-      ),
-    );
-  }
-
-  void _showAboutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF161B22),
-        title: const Text(
-          'NextMeal Dashboard',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Versión: 1.0.0',
-              style: TextStyle(color: Colors.white70),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Dashboard avanzado para gestión de ventas con gráficos interactivos y actualización en tiempo real.',
-              style: TextStyle(color: Colors.white70),
-            ),
-          ],
-        ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Cerrar',
-              style: TextStyle(color: Color(0xFF10B981)),
-            ),
+          // Botón de debug para recargar datos
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white70),
+            onPressed: () {
+              setState(() {
+                isLoading = true;
+              });
+              _loadUserDetails();
+            },
           ),
         ],
       ),
+      body: isLoading 
+        ? const Center(
+            child: CircularProgressIndicator(
+              color: Color(0xFF10B981),
+            ),
+          )
+        : Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Card de información del usuario
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF161B22),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.1),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blueAccent.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.person,
+                              color: Colors.blueAccent,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Administrador Actual',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  // MOSTRAR NOMBRE REAL O MENSAJE DE DEBUG
+                                  userDetails?.data?.nombre ?? 'No disponible',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  // MOSTRAR EMAIL REAL O MENSAJE DE DEBUG
+                                  userDetails?.data?.email ?? 'No disponible',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Información de la app
+                _buildInfoCard(
+                  'Versión de la app',
+                  '1.0.0',
+                  Icons.info,
+                  Colors.green,
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Nota sobre contraseña
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'La contraseña se cambia desde el software.',
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 13,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                
+                const Spacer(),
+                
+                // Botón de cerrar sesión
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showLogoutDialog(context),
+                      icon: const Icon(Icons.logout),
+                      label: const Text('Cerrar sesión'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 71, 141, 247),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+
+  Widget _buildInfoCard(String title, String value, IconData icon, Color iconColor) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161B22),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(
+              icon,
+              color: iconColor,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Diálogo de confirmación de logout
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF161B22),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              const Icon(
+                Icons.logout,
+                color: Color.fromARGB(255, 71, 141, 247),
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Cerrar Sesión',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            '¿Estás seguro de que quieres cerrar sesión?',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 16,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await SharedService.logout(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 71, 141, 247),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Cerrar Sesión',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
